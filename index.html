@@ -1,162 +1,1337 @@
-const state = {
-  current: null,
-  asked: new Set(),
-  correct: 0,
-  total: 0
-};
-
-const difficultyEl = document.getElementById("difficulty");
-const imageEl = document.getElementById("city-image");
-const hint1El = document.getElementById("hint-1");
-const hint2El = document.getElementById("hint-2");
-const guessInputEl = document.getElementById("guess-input");
-const resultEl = document.getElementById("result");
-const metaEl = document.getElementById("meta");
-const scoreEl = document.getElementById("score");
-
-function normalize(text) {
-  return text.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
-}
-
-function pool() {
-  if (difficultyEl.value === "all") return window.cityQuestionSet;
-  return window.cityQuestionSet.filter((c) => c.difficulty === difficultyEl.value);
-}
-
-function newRound() {
-  const candidates = pool().filter((c) => !state.asked.has(c.city));
-  if (!candidates.length) {
-    resultEl.textContent = "No more cities in this difficulty. Change difficulty or reset the page.";
-    return;
-  }
-
-  const pick = candidates[Math.floor(Math.random() * candidates.length)];
-  state.current = pick;
-  state.asked.add(pick.city);
-
-  imageEl.src = pick.image;
-  hint1El.textContent = pick.hints[0];
-  hint2El.textContent = pick.hints[1];
-  resultEl.textContent = "";
-  metaEl.textContent = `Difficulty: ${pick.difficulty.toUpperCase()}`;
-  guessInputEl.value = "";
-  guessInputEl.focus();
-}
-
-function checkGuess() {
-  if (!state.current) return;
-  const guess = normalize(guessInputEl.value);
-  const answer = normalize(state.current.city);
-  state.total += 1;
-
-  if (guess === answer) {
-    state.correct += 1;
-    resultEl.textContent = `✅ Correct! It was ${state.current.city}, ${state.current.country}.`;
-  } else {
-    resultEl.textContent = `❌ Not quite. Correct answer: ${state.current.city}, ${state.current.country}.`;
-  }
-
-  scoreEl.textContent = `Score: ${state.correct} / ${state.total}`;
-}
-
-document.getElementById("new-round").addEventListener("click", newRound);
-document.getElementById("check-btn").addEventListener("click", checkGuess);
-
-guessInputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") checkGuess();
-});
-
-difficultyEl.addEventListener("change", newRound);
-
-newRound();
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>City Guess Game</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>City Spotlight Showdown</title>
+  <style>
+    :root {
+      --bg-1: #061129;
+      --bg-2: #0b1d44;
+      --panel: rgba(10, 20, 55, 0.92);
+      --panel-soft: rgba(255, 255, 255, 0.08);
+      --line: rgba(255, 255, 255, 0.16);
+      --text: #eff5ff;
+      --muted: #b4c1e6;
+      --accent: #57a7ff;
+      --accent-dark: #2a73d6;
+      --good: #2be675;
+      --bad: #ff4368;
+      --warning: #ffdf6e;
+      --black-tile: #000000;
+      --tile-height: 112px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
+      --shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Inter", "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 8%, #22489b 0%, transparent 35%),
+        radial-gradient(circle at 88% 18%, #294183 0%, transparent 30%),
+        linear-gradient(140deg, var(--bg-2), var(--bg-1));
+      background-attachment: fixed;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app-shell {
+      width: min(1380px, 96vw);
+      margin: 0 auto;
+      padding: 18px 12px 26px;
+    }
+
+    .banner {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(120deg, rgba(87, 167, 255, 0.25), transparent 45%);
+      pointer-events: none;
+    }
+
+    .banner-inner {
+      position: relative;
+      z-index: 1;
+      padding: 18px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(1.45rem, 1.9vw, 2.1rem);
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.5;
+      max-width: 85ch;
+    }
+
+    .board-wrap {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 12px;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .category {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .category-header {
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      background: linear-gradient(135deg, rgba(51, 94, 184, 0.9), rgba(35, 65, 135, 0.8));
+    }
+
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .tile {
+      position: relative;
+      min-height: var(--tile-height);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-sm);
+      background: #101010;
+      overflow: hidden;
+      padding: 0;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .tile:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .tile:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .tile-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: blur(9px) saturate(0.9) brightness(0.68);
+      transform: scale(1.25);
+      transition: transform 250ms ease, filter 250ms ease;
+      display: block;
+    }
+
+    .tile:hover .tile-image {
+      transform: scale(1.18);
+      filter: blur(7px) brightness(0.76);
+    }
+
+    .tile-meta {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.68));
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    .tile.used {
+      background: var(--black-tile);
+      border-color: rgba(255, 255, 255, 0.24);
+      cursor: not-allowed;
+    }
+
+    .tile.used .tile-image,
+    .tile.used .tile-meta {
+      display: none;
+    }
+
+    .players-wrap {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 12px;
+    }
+
+    .players-title {
+      margin: 0 0 10px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      font-size: 0.96rem;
+    }
+
+    .players-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .player-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid transparent;
+      border-radius: var(--radius-md);
+      min-width: 170px;
+      flex: 1 1 170px;
+      padding: 10px 12px;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .player-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(87, 167, 255, 0.18), 0 8px 18px rgba(8, 20, 52, 0.5);
+    }
+
+    .player-name {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .player-score {
+      margin-top: 6px;
+      color: #8ff9b4;
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .turn-note {
+      margin-top: 6px;
+      color: var(--warning);
+      font-size: 0.86rem;
+      min-height: 1.2em;
+    }
+
+    .layer {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 45;
+    }
+
+    .layer.hidden {
+      display: none !important;
+    }
+
+    .setup-layer {
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(2px);
+    }
+
+    .panel {
+      width: min(560px, 94vw);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: #0f1d49;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 1.34rem;
+    }
+
+    .panel p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.94rem;
+    }
+
+    .field {
+      margin-top: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 9px;
+      color: var(--text);
+      padding: 10px;
+    }
+
+    .field input:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .button-row {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 13px;
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, opacity 140ms ease, background 140ms ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    }
+
+    .btn-secondary {
+      background: #324577;
+    }
+
+    .registered {
+      margin-top: 10px;
+      min-height: 1.35em;
+      font-size: 0.9rem;
+      color: #c6d6ff;
+    }
+
+    .error-msg {
+      margin-top: 7px;
+      min-height: 1.35em;
+      color: #ff8fa8;
+      font-size: 0.88rem;
+    }
+
+    .question-layer {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(2px);
+      z-index: 50;
+      animation: fade-in 220ms ease;
+    }
+
+    .question-card {
+      width: min(1120px, 95vw);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: #0a173e;
+      box-shadow: var(--shadow);
+      padding: 12px;
+    }
+
+    .question-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .question-title {
+      margin: 0;
+      font-size: 1.22rem;
+    }
+
+    .hint-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .hint-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 800;
+      background: #31467b;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .hint-btn.used {
+      background: #1f2f58;
+      color: #cdd8f4;
+    }
+
+    .question-image-wrap {
+      position: relative;
+      width: 100%;
+      height: min(66vh, 620px);
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: #02040c;
+    }
+
+    .question-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.14);
+      animation: reveal-zoom 420ms ease forwards;
+    }
+
+    .hint-banner {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 12px;
+      max-width: 90%;
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .hint-banner.hidden {
+      display: none;
+    }
+
+    .answer-area {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+    }
+
+    .answer-input {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 9px;
+      background: rgba(0, 0, 0, 0.37);
+      color: #fff;
+      padding: 10px;
+      min-width: 140px;
+    }
+
+    .resolution-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+      gap: 8px;
+    }
+
+    .feedback-layer {
+      z-index: 90;
+      background: rgba(0, 0, 0, 0.55);
+      animation: fade-in 130ms ease;
+    }
+
+    .feedback-mark {
+      font-size: clamp(150px, 26vw, 290px);
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .feedback-mark.good {
+      color: var(--good);
+    }
+
+    .feedback-mark.bad {
+      color: var(--bad);
+    }
+
+    .end-layer {
+      z-index: 60;
+      background: rgba(0, 0, 0, 0.88);
+    }
+
+    .end-card {
+      width: min(1000px, 95vw);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #101f4f;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .podium {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 14px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .podium-step {
+      width: min(220px, 30vw);
+      min-width: 180px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px 12px 0 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+      text-align: center;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 5px;
+    }
+
+    .podium-step.first { min-height: 260px; }
+    .podium-step.second { min-height: 220px; }
+    .podium-step.third { min-height: 190px; }
+
+    .place-label {
+      font-size: 0.84rem;
+      letter-spacing: 0.5px;
+      color: #d8e4ff;
+      opacity: 0.85;
+    }
+
+    .winner-name {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .winner-score {
+      color: #9bffc2;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .champagne {
+      margin-top: 4px;
+      font-size: 1.6rem;
+    }
+
+    @keyframes reveal-zoom {
+      from {
+        transform: scale(1.2);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 980px) {
+      .board-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tile-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .question-image-wrap {
+        height: min(55vh, 460px);
+      }
+
+      .answer-area {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .tile-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hint-actions {
+        margin-left: 0;
+      }
+
+      .question-title {
+        font-size: 1.02rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main class="container">
-    <h1>Guess the City</h1>
-    <p class="subtitle">Use the image + hints to guess the city.</p>
+  <div class="app-shell">
+    <header class="banner">
+      <div class="banner-inner">
+        <h1 class="title">City Spotlight Showdown</h1>
+        <p class="subtitle">
+          Three categories. Eight photos each. Easy = 10 points, Medium = 20 points, Hard = 30 points.
+          Use hints only if needed (one hint = 50% points, two hints = 25% points). Turns rotate after each guess.
+        </p>
+      </div>
+    </header>
 
-    <section class="controls">
-      <label for="difficulty">Difficulty</label>
-      <select id="difficulty">
-        <option value="all">All</option>
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
-      <button id="new-round">New Round</button>
+    <section class="board-wrap" aria-label="Game board">
+      <div id="boardGrid" class="board-grid"></div>
     </section>
 
-    <img id="city-image" alt="City to guess" />
-
-    <section class="hints">
-      <h2>Hints</h2>
-      <ul>
-        <li id="hint-1">—</li>
-        <li id="hint-2">—</li>
-      </ul>
+    <section class="players-wrap" aria-label="Players and scores">
+      <p class="players-title">Contestants</p>
+      <div id="playersRow" class="players-row"></div>
+      <div id="turnNote" class="turn-note"></div>
     </section>
+  </div>
 
-    <section class="guess-box">
-      <input id="guess-input" type="text" placeholder="Type city name..." />
-      <button id="check-btn">Check Guess</button>
-    </section>
+  <div id="setupLayer" class="layer setup-layer">
+    <div class="panel">
+      <h2>Player Setup</h2>
+      <p>Enter total number of players, then add each player's name one-by-one. When all are added, click Done.</p>
 
-    <p id="result"></p>
-    <p id="meta"></p>
-    <p id="score">Score: 0 / 0</p>
-  </main>
+      <div class="field">
+        <label for="playerCountInput">Number of Players</label>
+        <input id="playerCountInput" type="number" min="1" max="12" placeholder="Example: 3" />
+      </div>
 
-  <script src="main.js"></script>
-  <script src="game.js"></script>
+      <div class="field">
+        <label for="playerNameInput">Player Name</label>
+        <input id="playerNameInput" type="text" placeholder="Type a name" />
+      </div>
+
+      <div class="button-row">
+        <button id="addPlayerBtn" class="btn btn-secondary" type="button">Add Player</button>
+        <button id="doneBtn" class="btn btn-primary" type="button" disabled>Done</button>
+      </div>
+
+      <div id="registeredPlayers" class="registered"></div>
+      <div id="setupError" class="error-msg"></div>
+    </div>
+  </div>
+
+  <div id="questionLayer" class="layer question-layer hidden" aria-hidden="true"></div>
+
+  <div id="feedbackLayer" class="layer feedback-layer hidden" aria-hidden="true">
+    <div id="feedbackMark" class="feedback-mark">✓</div>
+  </div>
+
+  <div id="endLayer" class="layer end-layer hidden" aria-hidden="true"></div>
+
+  <script>
+    // ------------------------------
+    // Game Data
+    // ------------------------------
+
+    const gameData = {
+      easy: {
+        label: "Easy",
+        points: 10,
+        questions: [
+          {
+            city: "New York",
+            image: "https://images.unsplash.com/photo-1496588152823-86ff7695b7f4?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in the United States.",
+            hint2: "It is known as the Big Apple."
+          },
+          {
+            city: "Paris",
+            image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in France.",
+            hint2: "The Eiffel Tower is here."
+          },
+          {
+            city: "London",
+            image: "https://images.unsplash.com/photo-1471623432079-b009d30b6729?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in the UK.",
+            hint2: "Big Ben is a famous landmark here."
+          },
+          {
+            city: "Tokyo",
+            image: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in East Asia.",
+            hint2: "It is the capital of Japan."
+          },
+          {
+            city: "Rome",
+            image: "https://images.unsplash.com/photo-1529260830199-42c24126f198?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Italy.",
+            hint2: "The Colosseum is located here."
+          },
+          {
+            city: "Sydney",
+            image: "https://images.unsplash.com/photo-1523428096881-5bd79d043006?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Australia.",
+            hint2: "Its Opera House is world famous."
+          },
+          {
+            city: "Dubai",
+            image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in the United Arab Emirates.",
+            hint2: "Burj Khalifa is here."
+          },
+          {
+            city: "Toronto",
+            image: "https://images.unsplash.com/photo-1517090504586-fde19ea6066f?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Canada.",
+            hint2: "The CN Tower is here."
+          }
+        ]
+      },
+
+      medium: {
+        label: "Medium",
+        points: 20,
+        questions: [
+          {
+            city: "Prague",
+            image: "https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Central Europe.",
+            hint2: "It is the capital of the Czech Republic."
+          },
+          {
+            city: "Lisbon",
+            image: "https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city has many hills and yellow trams.",
+            hint2: "It is the capital of Portugal."
+          },
+          {
+            city: "Seoul",
+            image: "https://images.unsplash.com/photo-1538485399081-7c897d5f9f27?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in South Korea.",
+            hint2: "It sits along the Han River."
+          },
+          {
+            city: "Vienna",
+            image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is known for classical music history.",
+            hint2: "It is the capital of Austria."
+          },
+          {
+            city: "Budapest",
+            image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is split by the Danube.",
+            hint2: "It is the capital of Hungary."
+          },
+          {
+            city: "Edinburgh",
+            image: "https://images.unsplash.com/photo-1474898856510-884a2f50f0f8?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Scotland.",
+            hint2: "Its castle overlooks the city center."
+          },
+          {
+            city: "Auckland",
+            image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in New Zealand.",
+            hint2: "It is called the City of Sails."
+          },
+          {
+            city: "Munich",
+            image: "https://images.unsplash.com/photo-1534313314376-a72289b6181e?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in southern Germany.",
+            hint2: "Oktoberfest is hosted here."
+          }
+        ]
+      },
+
+      hard: {
+        label: "Hard",
+        points: 30,
+        questions: [
+          {
+            city: "Kyoto",
+            image: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Japan and famous for temples.",
+            hint2: "It was once Japan's imperial capital."
+          },
+          {
+            city: "Salzburg",
+            image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Austria.",
+            hint2: "Mozart was born here."
+          },
+          {
+            city: "Granada",
+            image: "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in southern Spain.",
+            hint2: "The Alhambra palace is here."
+          },
+          {
+            city: "Quebec City",
+            image: "https://images.unsplash.com/photo-1519181245277-cffeb31da2e3?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Canada.",
+            hint2: "It is a French-speaking provincial capital."
+          },
+          {
+            city: "Innsbruck",
+            image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in the Alps.",
+            hint2: "It is in western Austria."
+          },
+          {
+            city: "Porto",
+            image: "https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Portugal.",
+            hint2: "Its name is connected to port wine."
+          },
+          {
+            city: "Bergen",
+            image: "https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This coastal city is in Norway.",
+            hint2: "It is known for colorful harbor houses."
+          },
+          {
+            city: "Cork",
+            image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1800&auto=format&fit=crop",
+            hint1: "This city is in Ireland.",
+            hint2: "It is the second-largest city in the Republic of Ireland."
+          }
+        ]
+      }
+    };
+
+    // ------------------------------
+    // State
+    // ------------------------------
+
+    const state = {
+      players: [],
+      expectedPlayers: null,
+      activePlayerIndex: 0,
+      usedQuestions: 0,
+      currentQuestion: null,
+      hintsUsedInCurrentQuestion: 0,
+      hasAnsweredCurrentQuestion: false
+    };
+
+    const totalQuestions = 24;
+
+    // ------------------------------
+    // Element refs
+    // ------------------------------
+
+    const boardGrid = document.getElementById("boardGrid");
+    const playersRow = document.getElementById("playersRow");
+    const turnNote = document.getElementById("turnNote");
+
+    const setupLayer = document.getElementById("setupLayer");
+    const playerCountInput = document.getElementById("playerCountInput");
+    const playerNameInput = document.getElementById("playerNameInput");
+    const addPlayerBtn = document.getElementById("addPlayerBtn");
+    const doneBtn = document.getElementById("doneBtn");
+    const registeredPlayers = document.getElementById("registeredPlayers");
+    const setupError = document.getElementById("setupError");
+
+    const questionLayer = document.getElementById("questionLayer");
+    const feedbackLayer = document.getElementById("feedbackLayer");
+    const feedbackMark = document.getElementById("feedbackMark");
+    const endLayer = document.getElementById("endLayer");
+
+    // ------------------------------
+    // Utilities
+    // ------------------------------
+
+    function normalizeText(value) {
+      return String(value)
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]/g, "");
+    }
+
+    function showSetupError(message) {
+      setupError.textContent = message;
+    }
+
+    function clearSetupError() {
+      setupError.textContent = "";
+    }
+
+    function showFeedback(isCorrect) {
+      feedbackMark.className = "feedback-mark " + (isCorrect ? "good" : "bad");
+      feedbackMark.textContent = isCorrect ? "✓" : "✗";
+      feedbackLayer.classList.remove("hidden");
+
+      setTimeout(() => {
+        feedbackLayer.classList.add("hidden");
+      }, 2000);
+    }
+
+    function formatPoints(points) {
+      return `${points} pts`;
+    }
+
+    // ------------------------------
+    // Player setup
+    // ------------------------------
+
+    function updateRegisteredPlayersText() {
+      if (state.players.length === 0) {
+        registeredPlayers.textContent = "No players added yet.";
+        return;
+      }
+
+      const names = state.players.map((player) => player.name).join(", ");
+      registeredPlayers.textContent = `Added (${state.players.length}/${state.expectedPlayers ?? "?"}): ${names}`;
+    }
+
+    function addPlayerFromInput() {
+      clearSetupError();
+
+      const count = Number(playerCountInput.value);
+      const name = playerNameInput.value.trim();
+
+      if (!Number.isInteger(count) || count < 1) {
+        showSetupError("Enter a valid number of players first.");
+        return;
+      }
+
+      if (count > 12) {
+        showSetupError("For this version, please use 12 players or fewer.");
+        return;
+      }
+
+      state.expectedPlayers = count;
+
+      if (!name) {
+        showSetupError("Type a player name before clicking Add Player.");
+        return;
+      }
+
+      if (state.players.length >= state.expectedPlayers) {
+        showSetupError("You already added all requested players.");
+        return;
+      }
+
+      const duplicate = state.players.some((player) => normalizeText(player.name) === normalizeText(name));
+      if (duplicate) {
+        showSetupError("That name is already used. Please choose a different name.");
+        return;
+      }
+
+      state.players.push({
+        name,
+        score: 0
+      });
+
+      playerNameInput.value = "";
+      updateRegisteredPlayersText();
+
+      if (state.players.length === state.expectedPlayers) {
+        doneBtn.disabled = false;
+        showSetupError("All players added. Click Done to start the game.");
+      } else {
+        const remaining = state.expectedPlayers - state.players.length;
+        showSetupError(`${remaining} more player${remaining === 1 ? "" : "s"} to add.`);
+      }
+    }
+
+    function finalizeSetup() {
+      clearSetupError();
+
+      if (!Number.isInteger(state.expectedPlayers) || state.expectedPlayers < 1) {
+        showSetupError("Please enter the number of players and add names first.");
+        return;
+      }
+
+      if (state.players.length !== state.expectedPlayers) {
+        const remaining = state.expectedPlayers - state.players.length;
+        showSetupError(`Add ${remaining} more player${remaining === 1 ? "" : "s"} before clicking Done.`);
+        return;
+      }
+
+      setupLayer.classList.add("hidden");
+      renderPlayers();
+    }
+
+    // ------------------------------
+    // Render board
+    // ------------------------------
+
+    function createTile(levelKey, questionIndex, points, imageUrl) {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "tile";
+      tile.dataset.level = levelKey;
+      tile.dataset.questionIndex = String(questionIndex);
+
+      const img = document.createElement("img");
+      img.className = "tile-image";
+      img.src = imageUrl;
+      img.alt = `Blurred ${levelKey} city clue`;
+
+      const meta = document.createElement("div");
+      meta.className = "tile-meta";
+      meta.textContent = formatPoints(points);
+
+      tile.appendChild(img);
+      tile.appendChild(meta);
+
+      tile.addEventListener("click", () => {
+        openQuestion(levelKey, questionIndex, tile);
+      });
+
+      return tile;
+    }
+
+    function renderBoard() {
+      boardGrid.innerHTML = "";
+
+      Object.entries(gameData).forEach(([levelKey, levelData]) => {
+        const category = document.createElement("article");
+        category.className = "category";
+
+        const header = document.createElement("div");
+        header.className = "category-header";
+        header.textContent = levelData.label;
+
+        const tileGrid = document.createElement("div");
+        tileGrid.className = "tile-grid";
+
+        levelData.questions.forEach((question, index) => {
+          const tile = createTile(levelKey, index, levelData.points, question.image);
+          tileGrid.appendChild(tile);
+        });
+
+        category.appendChild(header);
+        category.appendChild(tileGrid);
+        boardGrid.appendChild(category);
+      });
+    }
+
+    // ------------------------------
+    // Render players
+    // ------------------------------
+
+    function renderPlayers() {
+      playersRow.innerHTML = "";
+
+      state.players.forEach((player, index) => {
+        const card = document.createElement("article");
+        card.className = "player-card" + (index === state.activePlayerIndex ? " active" : "");
+
+        const name = document.createElement("h3");
+        name.className = "player-name";
+        name.textContent = player.name;
+
+        const score = document.createElement("p");
+        score.className = "player-score";
+        score.textContent = formatPoints(player.score);
+
+        card.appendChild(name);
+        card.appendChild(score);
+        playersRow.appendChild(card);
+      });
+
+      if (state.players.length > 0) {
+        turnNote.textContent = `Current turn: ${state.players[state.activePlayerIndex].name}`;
+      } else {
+        turnNote.textContent = "";
+      }
+    }
+
+    function rotateTurn() {
+      if (state.players.length === 0) {
+        return;
+      }
+
+      state.activePlayerIndex = (state.activePlayerIndex + 1) % state.players.length;
+      renderPlayers();
+    }
+
+    // ------------------------------
+    // Question flow
+    // ------------------------------
+
+    function markTileUsed(tile) {
+      tile.classList.add("used");
+      tile.disabled = true;
+    }
+
+    function openQuestion(levelKey, questionIndex, tileElement) {
+      if (tileElement.classList.contains("used")) {
+        return;
+      }
+
+      const levelData = gameData[levelKey];
+      const question = levelData.questions[questionIndex];
+
+      state.currentQuestion = {
+        levelKey,
+        questionIndex,
+        tileElement,
+        answer: question.city,
+        hint1: question.hint1,
+        hint2: question.hint2,
+        points: levelData.points,
+        image: question.image
+      };
+
+      state.hintsUsedInCurrentQuestion = 0;
+      state.hasAnsweredCurrentQuestion = false;
+
+      questionLayer.innerHTML = `
+        <div class="question-card">
+          <div class="question-top">
+            <h2 class="question-title">${levelData.label} Question — Guess the City</h2>
+            <div class="hint-actions">
+              <button id="hintOneBtn" class="hint-btn" type="button">💡</button>
+              <button id="hintTwoBtn" class="hint-btn" type="button">💡💡</button>
+            </div>
+          </div>
+
+          <div class="question-image-wrap">
+            <img class="question-image" src="${question.image}" alt="City clue image" />
+            <div id="hintBanner" class="hint-banner hidden"></div>
+          </div>
+
+          <div class="answer-area">
+            <input id="answerInput" class="answer-input" type="text" placeholder="Type city name" />
+            <button id="submitAnswerBtn" class="btn btn-primary" type="button">Submit</button>
+            <button id="closeQuestionBtn" class="btn btn-secondary" type="button" disabled>Back</button>
+          </div>
+
+          <div class="resolution-actions" id="resolutionActions"></div>
+        </div>
+      `;
+
+      questionLayer.classList.remove("hidden");
+      questionLayer.setAttribute("aria-hidden", "false");
+
+      const hintOneBtn = document.getElementById("hintOneBtn");
+      const hintTwoBtn = document.getElementById("hintTwoBtn");
+      const hintBanner = document.getElementById("hintBanner");
+      const submitAnswerBtn = document.getElementById("submitAnswerBtn");
+      const closeQuestionBtn = document.getElementById("closeQuestionBtn");
+      const answerInput = document.getElementById("answerInput");
+
+      hintOneBtn.addEventListener("click", () => {
+        if (state.hasAnsweredCurrentQuestion) {
+          return;
+        }
+
+        state.hintsUsedInCurrentQuestion = Math.max(state.hintsUsedInCurrentQuestion, 1);
+        hintBanner.textContent = state.currentQuestion.hint1;
+        hintBanner.classList.remove("hidden");
+        hintOneBtn.classList.add("used");
+      });
+
+      hintTwoBtn.addEventListener("click", () => {
+        if (state.hasAnsweredCurrentQuestion) {
+          return;
+        }
+
+        state.hintsUsedInCurrentQuestion = 2;
+        hintBanner.textContent = state.currentQuestion.hint2;
+        hintBanner.classList.remove("hidden");
+        hintOneBtn.classList.add("used");
+        hintTwoBtn.classList.add("used");
+      });
+
+      function resolveQuestion() {
+        const playerGuess = answerInput.value.trim();
+        const correct = normalizeText(playerGuess) === normalizeText(state.currentQuestion.answer);
+
+        state.hasAnsweredCurrentQuestion = true;
+        hintOneBtn.disabled = true;
+        hintTwoBtn.disabled = true;
+        submitAnswerBtn.disabled = true;
+        answerInput.disabled = true;
+        closeQuestionBtn.disabled = false;
+
+        showFeedback(correct);
+
+        if (correct) {
+          let multiplier = 1;
+          if (state.hintsUsedInCurrentQuestion === 1) {
+            multiplier = 0.5;
+          }
+          if (state.hintsUsedInCurrentQuestion >= 2) {
+            multiplier = 0.25;
+          }
+
+          const earned = Math.round(state.currentQuestion.points * multiplier);
+          state.players[state.activePlayerIndex].score += earned;
+
+          markTileUsed(state.currentQuestion.tileElement);
+          state.usedQuestions += 1;
+        }
+
+        rotateTurn();
+
+        const resolutionActions = document.getElementById("resolutionActions");
+        resolutionActions.innerHTML = correct
+          ? `<span style="color: #9bffc2; font-weight: 700;">Correct! ${state.players[(state.activePlayerIndex + state.players.length - 1) % state.players.length].name} earned points.</span>`
+          : `<span style="color: #ff9db1; font-weight: 700;">Incorrect. Correct answer: ${state.currentQuestion.answer}.</span>`;
+
+        if (state.usedQuestions >= totalQuestions) {
+          closeQuestionBtn.textContent = "Show Podium";
+        }
+      }
+
+      submitAnswerBtn.addEventListener("click", () => {
+        if (state.hasAnsweredCurrentQuestion) {
+          return;
+        }
+
+        resolveQuestion();
+      });
+
+      answerInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !submitAnswerBtn.disabled) {
+          resolveQuestion();
+        }
+      });
+
+      closeQuestionBtn.addEventListener("click", () => {
+        closeQuestion();
+      });
+
+      setTimeout(() => {
+        answerInput.focus();
+      }, 80);
+    }
+
+    function closeQuestion() {
+      questionLayer.classList.add("hidden");
+      questionLayer.setAttribute("aria-hidden", "true");
+      questionLayer.innerHTML = "";
+
+      if (state.usedQuestions >= totalQuestions) {
+        showEndPodium();
+      }
+    }
+
+    // ------------------------------
+    // End game
+    // ------------------------------
+
+    function showEndPodium() {
+      const ranked = [...state.players].sort((a, b) => b.score - a.score);
+      const topThree = [ranked[0], ranked[1], ranked[2]].filter(Boolean);
+
+      const orderedForVisual = [
+        topThree[1],
+        topThree[0],
+        topThree[2]
+      ].filter(Boolean);
+
+      const classes = ["second", "first", "third"];
+      const labels = ["2nd", "1st", "3rd"];
+
+      const steps = orderedForVisual
+        .map((player, index) => {
+          const cssClass = classes[index] || "third";
+          const place = labels[index] || `${index + 1}th`;
+
+          return `
+            <article class="podium-step ${cssClass}">
+              <div class="place-label">${place} Place</div>
+              <h3 class="winner-name">${player.name}</h3>
+              <p class="winner-score">${formatPoints(player.score)}</p>
+              <div class="champagne">🍾</div>
+              <div>Moët &amp; Chandon</div>
+            </article>
+          `;
+        })
+        .join("");
+
+      endLayer.innerHTML = `
+        <div class="end-card">
+          <h2 style="margin: 0;">🏆 Final Podium</h2>
+          <p style="margin: 7px 0 0; color: var(--muted);">All city clues have been completed.</p>
+          <div class="podium">${steps}</div>
+        </div>
+      `;
+
+      endLayer.classList.remove("hidden");
+      endLayer.setAttribute("aria-hidden", "false");
+    }
+
+    // ------------------------------
+    // Wire up setup buttons
+    // ------------------------------
+
+    addPlayerBtn.addEventListener("click", addPlayerFromInput);
+    doneBtn.addEventListener("click", finalizeSetup);
+
+    playerNameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        addPlayerFromInput();
+      }
+    });
+
+    playerCountInput.addEventListener("input", () => {
+      clearSetupError();
+      doneBtn.disabled = true;
+
+      const proposed = Number(playerCountInput.value);
+      if (Number.isInteger(proposed) && proposed > 0) {
+        state.expectedPlayers = proposed;
+        if (state.players.length === state.expectedPlayers && state.players.length > 0) {
+          doneBtn.disabled = false;
+        }
+      }
+
+      updateRegisteredPlayersText();
+    });
+
+    // ------------------------------
+    // Boot
+    // ------------------------------
+
+    renderBoard();
+    updateRegisteredPlayersText();
+  </script>
 </body>
 </html>
-const cityQuestionSet = [
-  { difficulty: "easy", city: "Paris", country: "France", image: "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg", hints: ["This city is famous for a wrought-iron tower completed in 1889.", "It’s often called the City of Light."] },
-  { difficulty: "easy", city: "New York City", country: "United States", image: "https://upload.wikimedia.org/wikipedia/commons/4/47/New_york_times_square-terabass.jpg", hints: ["Times Square and Central Park are here.", "It’s nicknamed The Big Apple."] },
-  { difficulty: "easy", city: "London", country: "United Kingdom", image: "https://upload.wikimedia.org/wikipedia/commons/c/cd/London_Montage_L.jpg", hints: ["Big Ben and Buckingham Palace are major landmarks.", "The River Thames runs through this capital."] },
-  { difficulty: "easy", city: "Tokyo", country: "Japan", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/Shibuya_Night_%28HDR%29.jpg", hints: ["Shibuya Crossing is one of the busiest intersections in the world.", "This city is Japan’s capital."] },
-  { difficulty: "easy", city: "Sydney", country: "Australia", image: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Sydney_Opera_House_Sails.jpg", hints: ["It is known for its iconic Opera House.", "The Harbour Bridge is another famous symbol."] },
-  { difficulty: "easy", city: "Rome", country: "Italy", image: "https://upload.wikimedia.org/wikipedia/commons/d/de/Colosseo_2020.jpg", hints: ["The Colosseum is located here.", "This city was the center of an ancient empire."] },
-  { difficulty: "easy", city: "Dubai", country: "United Arab Emirates", image: "https://upload.wikimedia.org/wikipedia/commons/9/93/Dubai_skyline_2015.jpg", hints: ["The world’s tallest building, Burj Khalifa, is here.", "It transformed rapidly from desert trading town to global city."] },
-  { difficulty: "easy", city: "San Francisco", country: "United States", image: "https://upload.wikimedia.org/wikipedia/commons/0/0c/GoldenGateBridge-001.jpg", hints: ["The Golden Gate Bridge is its best-known landmark.", "Historic cable cars run on steep streets here."] },
-  { difficulty: "medium", city: "Barcelona", country: "Spain", image: "https://upload.wikimedia.org/wikipedia/commons/9/94/Sagrada_Familia_01.jpg", hints: ["Antoni Gaudí’s Sagrada Família dominates the skyline.", "This city sits on Spain’s Mediterranean coast."] },
-  { difficulty: "medium", city: "Istanbul", country: "Türkiye", image: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Istanbul_Montage_2016.png", hints: ["It spans two continents: Europe and Asia.", "Hagia Sophia is one of its most famous monuments."] },
-  { difficulty: "medium", city: "Rio de Janeiro", country: "Brazil", image: "https://upload.wikimedia.org/wikipedia/commons/9/98/Rio_de_Janeiro_City.jpg", hints: ["Christ the Redeemer overlooks this city.", "Copacabana and Ipanema beaches are here."] },
-  { difficulty: "medium", city: "Singapore", country: "Singapore", image: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Singapore_skyline_viewed_from_Gardens_by_the_Bay_East_2019-08-06.jpg", hints: ["Marina Bay Sands is one of its iconic buildings.", "It is both a city and a country."] },
-  { difficulty: "medium", city: "Amsterdam", country: "Netherlands", image: "https://upload.wikimedia.org/wikipedia/commons/2/20/Amsterdam_Canal_Ring.jpg", hints: ["This city is known for canals and narrow gabled houses.", "Bicycles are a major part of daily transport."] },
-  { difficulty: "medium", city: "Bangkok", country: "Thailand", image: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bangkok_skytrain_sunset.jpg", hints: ["Ornate temples like Wat Arun are major landmarks.", "It is Thailand’s capital city."] },
-  { difficulty: "medium", city: "Hong Kong", country: "China", image: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Hong_Kong_Night_Skyline.jpg", hints: ["Victoria Harbour separates Kowloon and Hong Kong Island.", "It is famous for dense skyline views and neon-lit streets."] },
-  { difficulty: "medium", city: "Cairo", country: "Egypt", image: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Kheops-Pyramid.jpg", hints: ["It sits near the Giza pyramids.", "The Nile River is central to this city’s identity."] },
-  { difficulty: "hard", city: "Venice", country: "Italy", image: "https://upload.wikimedia.org/wikipedia/commons/8/87/Venice_Canal.jpg", hints: ["This city is built on islands connected by bridges and canals.", "Gondolas are a famous way to travel here."] },
-  { difficulty: "hard", city: "Athens", country: "Greece", image: "https://upload.wikimedia.org/wikipedia/commons/d/da/The_Parthenon_in_Athens.jpg", hints: ["The Acropolis overlooks this city.", "It is considered the birthplace of democracy."] },
-  { difficulty: "hard", city: "Seoul", country: "South Korea", image: "https://upload.wikimedia.org/wikipedia/commons/2/2e/Seoul_montage_2019.png", hints: ["Gyeongbokgung Palace is a major historic site here.", "This is South Korea’s capital city."] },
-  { difficulty: "hard", city: "Vienna", country: "Austria", image: "https://upload.wikimedia.org/wikipedia/commons/f/f6/Wien_-_Karlskirche_abends.jpg", hints: ["This city is famous for classical composers like Mozart and Strauss.", "Schönbrunn Palace is one of its top attractions."] },
-  { difficulty: "hard", city: "Mexico City", country: "Mexico", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Mexico_City_Reforma_Skyline.jpg", hints: ["This city was built near the site of the Aztec capital Tenochtitlan.", "It is one of the largest cities in the Americas."] },
-  { difficulty: "hard", city: "Lisbon", country: "Portugal", image: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Lisbon_Baixa.jpg", hints: ["Historic yellow trams are a symbol of this hilly city.", "It sits along the Tagus River near the Atlantic."] },
-  { difficulty: "hard", city: "Munich", country: "Germany", image: "https://upload.wikimedia.org/wikipedia/commons/5/54/Munich_Panorama_from_Olympiaturm.jpg", hints: ["Oktoberfest is held in this city.", "It is the capital of Bavaria."] },
-  { difficulty: "hard", city: "Toronto", country: "Canada", image: "https://upload.wikimedia.org/wikipedia/commons/c/c6/Toronto_Skyline_and_CN_Tower.jpg", hints: ["The CN Tower is a signature landmark here.", "It is Canada’s largest city."] }
-];
-
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { cityQuestionSet };
-}
-
-if (typeof window !== "undefined") {
-  window.cityQuestionSet = cityQuestionSet;
-}
-body { font-family: Arial, sans-serif; margin: 0; background: #f3f5f9; color: #111; }
-.container { max-width: 720px; margin: 24px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-.subtitle { margin-top: -8px; color: #555; }
-.controls, .guess-box { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
-#city-image { width: 100%; height: 340px; object-fit: cover; border-radius: 8px; background: #ddd; }
-button { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
-input, select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
-#result { font-weight: 700; min-height: 24px; }
-#meta, #score { color: #444; }
