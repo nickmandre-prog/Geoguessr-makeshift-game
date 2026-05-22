@@ -1,159 +1,162 @@
+const state = {
+  current: null,
+  asked: new Set(),
+  correct: 0,
+  total: 0
+};
+
+const difficultyEl = document.getElementById("difficulty");
+const imageEl = document.getElementById("city-image");
+const hint1El = document.getElementById("hint-1");
+const hint2El = document.getElementById("hint-2");
+const guessInputEl = document.getElementById("guess-input");
+const resultEl = document.getElementById("result");
+const metaEl = document.getElementById("meta");
+const scoreEl = document.getElementById("score");
+
+function normalize(text) {
+  return text.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+}
+
+function pool() {
+  if (difficultyEl.value === "all") return window.cityQuestionSet;
+  return window.cityQuestionSet.filter((c) => c.difficulty === difficultyEl.value);
+}
+
+function newRound() {
+  const candidates = pool().filter((c) => !state.asked.has(c.city));
+  if (!candidates.length) {
+    resultEl.textContent = "No more cities in this difficulty. Change difficulty or reset the page.";
+    return;
+  }
+
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  state.current = pick;
+  state.asked.add(pick.city);
+
+  imageEl.src = pick.image;
+  hint1El.textContent = pick.hints[0];
+  hint2El.textContent = pick.hints[1];
+  resultEl.textContent = "";
+  metaEl.textContent = `Difficulty: ${pick.difficulty.toUpperCase()}`;
+  guessInputEl.value = "";
+  guessInputEl.focus();
+}
+
+function checkGuess() {
+  if (!state.current) return;
+  const guess = normalize(guessInputEl.value);
+  const answer = normalize(state.current.city);
+  state.total += 1;
+
+  if (guess === answer) {
+    state.correct += 1;
+    resultEl.textContent = `✅ Correct! It was ${state.current.city}, ${state.current.country}.`;
+  } else {
+    resultEl.textContent = `❌ Not quite. Correct answer: ${state.current.city}, ${state.current.country}.`;
+  }
+
+  scoreEl.textContent = `Score: ${state.correct} / ${state.total}`;
+}
+
+document.getElementById("new-round").addEventListener("click", newRound);
+document.getElementById("check-btn").addEventListener("click", checkGuess);
+
+guessInputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") checkGuess();
+});
+
+difficultyEl.addEventListener("change", newRound);
+
+newRound();
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GeoGuessr Showdown</title>
-  <style>
-    :root{--bg:#0c1026;--panel:#11173a;--accent:#4ea1ff;--text:#eef3ff;--muted:#aab4d6}
-    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at top,#1a255f,#070b1f);color:var(--text);min-height:100vh}
-    h1,h2,h3,p{margin:0}
-    .app{padding:18px;max-width:1200px;margin:0 auto}
-    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
-    .column{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;overflow:hidden}
-    .col-title{padding:12px;font-weight:700;text-align:center;background:linear-gradient(135deg,#23327d,#172258)}
-    .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px}
-    .tile{position:relative;height:90px;border:none;border-radius:10px;overflow:hidden;cursor:pointer;color:white;font-weight:700;background:#000}
-    .tile img{width:100%;height:100%;object-fit:cover;filter:blur(7px) brightness(.7);transform:scale(1.2);transition:.35s}
-    .tile span{position:absolute;inset:auto 0 6px 0;text-align:center;text-shadow:0 2px 3px black}
-    .tile:hover img{filter:blur(4px) brightness(.85)}
-    .tile.used{background:#000;cursor:default}.tile.used img,.tile.used span{display:none}
-    .players{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
-    .player{background:var(--panel);border:2px solid transparent;border-radius:10px;padding:10px 14px;min-width:150px}
-    .player.active{border-color:var(--accent);box-shadow:0 0 12px rgba(78,161,255,.5)}
-    .score{color:#8ad8a7;font-weight:700}
-
-    .modal,.question-view,.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-    .modal{background:rgba(0,0,0,.72);z-index:20}
-    .box{background:var(--panel);width:min(520px,92vw);border-radius:14px;padding:20px;border:1px solid rgba(255,255,255,.16)}
-    label{display:block;margin-top:10px;font-size:.94rem;color:var(--muted)}input{width:100%;margin-top:6px;padding:10px;border-radius:8px;border:1px solid #2f3868;background:#070d2c;color:#fff}
-    .row{display:flex;gap:8px;margin-top:12px}.btn{padding:10px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:700}
-    .btn.primary{background:#3e92ff;color:#fff}.btn.alt{background:#28325f;color:#dce7ff}
-    .question-view{background:rgba(6,10,30,.95);z-index:15;animation:fade .3s ease}
-    .q-card{width:min(980px,94vw);background:#0a102f;border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px}
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
-    .hint-buttons button{font-size:1.3rem;padding:8px 12px;background:#273260;color:#fff;border:none;border-radius:9px;cursor:pointer}
-    .image-wrap{margin-top:10px;height:58vh;overflow:hidden;border-radius:12px;position:relative}
-    .image-wrap img{width:100%;height:100%;object-fit:cover;filter:none;animation:zoom .45s ease}
-    .hint{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;background:rgba(0,0,0,.7);padding:10px 14px;border-radius:10px;font-size:1.05rem}
-    .answer-row{display:flex;gap:8px;margin-top:10px}
-    .answer-row input{flex:1}
-    .overlay{z-index:30;font-size:180px;font-weight:900;background:rgba(0,0,0,.5)}
-    .ok{color:#2eff77}.bad{color:#ff2e5b}
-    .hidden{display:none!important}
-    .podium{display:flex;align-items:flex-end;justify-content:center;gap:22px;margin-top:40px}
-    .place{background:#1b2554;border-radius:12px 12px 0 0;padding:12px;width:180px;text-align:center;border:1px solid rgba(255,255,255,.12)}
-    .p1{height:240px}.p2{height:190px}.p3{height:160px}
-    .champ{font-size:1.7rem;margin-top:8px}
-    @keyframes zoom{from{transform:scale(1.15)}to{transform:scale(1)}}
-    @keyframes fade{from{opacity:0}to{opacity:1}}
-  </style>
+  <title>City Guess Game</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="app">
-  <h1>GeoGuessr Showdown</h1>
-  <p>Guess the city from the photo. Easy = 10, Medium = 20, Hard = 30.</p>
-  <div id="board" class="board"></div>
-  <div id="players" class="players"></div>
-  <div id="end" class="hidden"></div>
-</div>
+  <main class="container">
+    <h1>Guess the City</h1>
+    <p class="subtitle">Use the image + hints to guess the city.</p>
 
-<div id="setup" class="modal">
-  <div class="box">
-    <h2>Set up Players</h2>
-    <label>Number of Players</label>
-    <input id="playerCount" type="number" min="1" max="12" placeholder="e.g. 3" />
-    <label>Player Name</label>
-    <input id="playerName" type="text" placeholder="Type name and click Add Player" />
-    <div id="nameList" style="margin-top:8px;color:#b6c5ff"></div>
-    <div class="row">
-      <button id="addPlayer" class="btn alt">Add Player</button>
-      <button id="donePlayers" class="btn primary hidden">Done</button>
-    </div>
-  </div>
-</div>
+    <section class="controls">
+      <label for="difficulty">Difficulty</label>
+      <select id="difficulty">
+        <option value="all">All</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <button id="new-round">New Round</button>
+    </section>
 
-<div id="questionView" class="question-view hidden"></div>
-<div id="resultOverlay" class="overlay hidden"></div>
+    <img id="city-image" alt="City to guess" />
 
-<script>
-const data = {
-  Easy: { points: 10, items: [
-    ['New York','https://images.unsplash.com/photo-1496588152823-86ff7695b7f4?q=80&w=1600&auto=format&fit=crop','Statue of Liberty country.','Known as the Big Apple.'],
-    ['Paris','https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1600&auto=format&fit=crop','Famous for croissants.','City with the Eiffel Tower.'],
-    ['London','https://images.unsplash.com/photo-1471623432079-b009d30b6729?q=80&w=1600&auto=format&fit=crop','Home of Big Ben.','Capital of England.'],
-    ['Tokyo','https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1600&auto=format&fit=crop','In Japan.','Largest city in Japan.'],
-    ['Rome','https://images.unsplash.com/photo-1529260830199-42c24126f198?q=80&w=1600&auto=format&fit=crop','Has the Colosseum.','Capital of Italy.'],
-    ['Sydney','https://images.unsplash.com/photo-1523428096881-5bd79d043006?q=80&w=1600&auto=format&fit=crop','Famous Opera House.','Big city in Australia.'],
-    ['Dubai','https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1600&auto=format&fit=crop','Known for very tall towers.','Home of Burj Khalifa.'],
-    ['Toronto','https://images.unsplash.com/photo-1517090504586-fde19ea6066f?q=80&w=1600&auto=format&fit=crop','Major city in Canada.','Has the CN Tower.'],
-  ]},
-  Medium: { points: 20, items: [
-    ['Prague','https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=1600&auto=format&fit=crop','European city with a famous astronomical clock.','Capital of the Czech Republic.'],
-    ['Lisbon','https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1600&auto=format&fit=crop','Colorful trams and steep hills.','Capital of Portugal.'],
-    ['Seoul','https://images.unsplash.com/photo-1538485399081-7c897d5f9f27?q=80&w=1600&auto=format&fit=crop','Capital city in South Korea.','Known for K-pop and Han River skyline.'],
-    ['Vienna','https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1600&auto=format&fit=crop','City of Mozart and grand palaces.','Capital of Austria.'],
-    ['Budapest','https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1600&auto=format&fit=crop','Split by the Danube River.','Capital of Hungary.'],
-    ['Edinburgh','https://images.unsplash.com/photo-1474898856510-884a2f50f0f8?q=80&w=1600&auto=format&fit=crop','City with a famous hill called Arthur’s Seat.','Capital of Scotland.'],
-    ['Auckland','https://images.unsplash.com/photo-1507699622108-4be3abd695ad?q=80&w=1600&auto=format&fit=crop','Largest city in New Zealand.','Known as the City of Sails.'],
-    ['Munich','https://images.unsplash.com/photo-1534313314376-a72289b6181e?q=80&w=1600&auto=format&fit=crop','Hosts Oktoberfest.','Major city in Bavaria, Germany.'],
-  ]},
-  Hard: { points: 30, items: [
-    ['Bruges','https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1600&auto=format&fit=crop','Medieval canals in Belgium.','Sometimes called the Venice of the North.'],
-    ['Reykjavik','https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=1600&auto=format&fit=crop','Northern capital with colorful rooftops.','Capital of Iceland.'],
-    ['Tallinn','https://images.unsplash.com/photo-1521038199265-bc482db0f923?q=80&w=1600&auto=format&fit=crop','Baltic city with walled old town.','Capital of Estonia.'],
-    ['Valletta','https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1600&auto=format&fit=crop','Small island capital in the Mediterranean.','Capital of Malta.'],
-    ['Quebec City','https://images.unsplash.com/photo-1519181245277-cffeb31da2e3?q=80&w=1600&auto=format&fit=crop','French-speaking city in Canada.','Capital of Quebec province.'],
-    ['Dubrovnik','https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1600&auto=format&fit=crop','Walled Adriatic city in Croatia.','A Game of Thrones filming location.'],
-    ['Ljubljana','https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=1600&auto=format&fit=crop','Capital of Slovenia.','Known for its dragon bridge.'],
-    ['Ghent','https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1600&auto=format&fit=crop','Belgian city between Bruges and Brussels.','Castle called Gravensteen is here.'],
-  ]}
-};
+    <section class="hints">
+      <h2>Hints</h2>
+      <ul>
+        <li id="hint-1">—</li>
+        <li id="hint-2">—</li>
+      </ul>
+    </section>
 
-const state = {players:[], turn:0, used:0, current:null, hintsUsed:0};
-const boardEl=document.getElementById('board'), playersEl=document.getElementById('players');
+    <section class="guess-box">
+      <input id="guess-input" type="text" placeholder="Type city name..." />
+      <button id="check-btn">Check Guess</button>
+    </section>
 
-function normalize(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'');}
-function renderPlayers(){playersEl.innerHTML='';state.players.forEach((p,i)=>{const d=document.createElement('div');d.className='player'+(i===state.turn?' active':'');d.innerHTML=`<h3>${p.name}</h3><div class="score">${p.score} pts</div>`;playersEl.appendChild(d);});}
-function nextTurn(){state.turn=(state.turn+1)%state.players.length;renderPlayers();}
+    <p id="result"></p>
+    <p id="meta"></p>
+    <p id="score">Score: 0 / 0</p>
+  </main>
 
-function buildBoard(){boardEl.innerHTML='';Object.entries(data).forEach(([level,info])=>{const col=document.createElement('div');col.className='column';col.innerHTML=`<div class="col-title">${level}</div>`;const tiles=document.createElement('div');tiles.className='tiles';info.items.forEach((item,idx)=>{const b=document.createElement('button');b.className='tile';b.dataset.level=level;b.dataset.idx=idx;b.innerHTML=`<img src="${item[1]}"/><span>${info.points} pts</span>`;b.onclick=()=>openQuestion(level,idx,b);tiles.appendChild(b);});col.appendChild(tiles);boardEl.appendChild(col);});}
-
-function openQuestion(level,idx,tile){ if(tile.classList.contains('used'))return; state.current={level,idx,tile};state.hintsUsed=0;
-const [answer,img,h1,h2]=data[level].items[idx];
-const q=document.getElementById('questionView');
-q.innerHTML=`<div class="q-card"><div class="topbar"><h2>${level} - Guess the City</h2><div class="hint-buttons"><button id="h1">💡</button><button id="h2">💡💡</button></div></div><div class="image-wrap"><img src="${img}"><div id="hint" class="hint hidden"></div></div><div class="answer-row"><input id="ans" placeholder="Type city name"/><button id="submitAns" class="btn primary">Submit</button><button id="back" class="btn alt">Back</button></div></div>`;
-q.classList.remove('hidden');
-const hintEl=document.getElementById('hint');
-document.getElementById('h1').onclick=()=>{state.hintsUsed=Math.max(state.hintsUsed,1);hintEl.textContent=h1;hintEl.classList.remove('hidden');};
-document.getElementById('h2').onclick=()=>{state.hintsUsed=2;hintEl.textContent=h2;hintEl.classList.remove('hidden');};
-document.getElementById('submitAns').onclick=()=>submitAnswer(answer,level);
-document.getElementById('back').onclick=()=>q.classList.add('hidden');
-}
-
-function showOverlay(ok){const o=document.getElementById('resultOverlay');o.innerHTML=`<div class="${ok?'ok':'bad'}">${ok?'✓':'✗'}</div>`;o.classList.remove('hidden');setTimeout(()=>o.classList.add('hidden'),2000);}
-
-function submitAnswer(answer,level){const guess=document.getElementById('ans').value.trim();const correct=normalize(guess)===normalize(answer);
-showOverlay(correct);
-if(correct){const base=data[level].points;const mult=state.hintsUsed===0?1:state.hintsUsed===1?0.5:0.25;state.players[state.turn].score += Math.round(base*mult);
-state.current.tile.classList.add('used');state.current.tile.textContent='';
-document.getElementById('questionView').classList.add('hidden');state.used++;if(state.used===24)return endGame();}
-nextTurn();
-renderPlayers();
-}
-
-function endGame(){boardEl.classList.add('hidden');const end=document.getElementById('end');end.classList.remove('hidden');const sorted=[...state.players].sort((a,b)=>b.score-a.score).slice(0,3);
-end.innerHTML=`<h2>🏆 Final Podium</h2><div class="podium">${sorted.map((p,i)=>`<div class="place p${i+1}"><div>#${i+1}</div><h3>${p.name}</h3><p>${p.score} pts</p><div class="champ">🍾</div><small>Moët & Chandon</small></div>`).join('')}</div>`;
-}
-
-buildBoard();
-
-const addBtn=document.getElementById('addPlayer'),doneBtn=document.getElementById('donePlayers');
-addBtn.onclick=()=>{const count=Number(document.getElementById('playerCount').value);const name=document.getElementById('playerName').value.trim();if(!count||count<1)return alert('Enter valid number of players first.');if(!name)return alert('Enter a player name.');if(state.players.length>=count)return;
-state.players.push({name,score:0});document.getElementById('playerName').value='';document.getElementById('nameList').textContent=`Players: ${state.players.map(p=>p.name).join(', ')}`;
-if(state.players.length===count)doneBtn.classList.remove('hidden');};
-
-doneBtn.onclick=()=>{if(!state.players.length)return;document.getElementById('setup').classList.add('hidden');renderPlayers();};
-</script>
+  <script src="main.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
+const cityQuestionSet = [
+  { difficulty: "easy", city: "Paris", country: "France", image: "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg", hints: ["This city is famous for a wrought-iron tower completed in 1889.", "It’s often called the City of Light."] },
+  { difficulty: "easy", city: "New York City", country: "United States", image: "https://upload.wikimedia.org/wikipedia/commons/4/47/New_york_times_square-terabass.jpg", hints: ["Times Square and Central Park are here.", "It’s nicknamed The Big Apple."] },
+  { difficulty: "easy", city: "London", country: "United Kingdom", image: "https://upload.wikimedia.org/wikipedia/commons/c/cd/London_Montage_L.jpg", hints: ["Big Ben and Buckingham Palace are major landmarks.", "The River Thames runs through this capital."] },
+  { difficulty: "easy", city: "Tokyo", country: "Japan", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/Shibuya_Night_%28HDR%29.jpg", hints: ["Shibuya Crossing is one of the busiest intersections in the world.", "This city is Japan’s capital."] },
+  { difficulty: "easy", city: "Sydney", country: "Australia", image: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Sydney_Opera_House_Sails.jpg", hints: ["It is known for its iconic Opera House.", "The Harbour Bridge is another famous symbol."] },
+  { difficulty: "easy", city: "Rome", country: "Italy", image: "https://upload.wikimedia.org/wikipedia/commons/d/de/Colosseo_2020.jpg", hints: ["The Colosseum is located here.", "This city was the center of an ancient empire."] },
+  { difficulty: "easy", city: "Dubai", country: "United Arab Emirates", image: "https://upload.wikimedia.org/wikipedia/commons/9/93/Dubai_skyline_2015.jpg", hints: ["The world’s tallest building, Burj Khalifa, is here.", "It transformed rapidly from desert trading town to global city."] },
+  { difficulty: "easy", city: "San Francisco", country: "United States", image: "https://upload.wikimedia.org/wikipedia/commons/0/0c/GoldenGateBridge-001.jpg", hints: ["The Golden Gate Bridge is its best-known landmark.", "Historic cable cars run on steep streets here."] },
+  { difficulty: "medium", city: "Barcelona", country: "Spain", image: "https://upload.wikimedia.org/wikipedia/commons/9/94/Sagrada_Familia_01.jpg", hints: ["Antoni Gaudí’s Sagrada Família dominates the skyline.", "This city sits on Spain’s Mediterranean coast."] },
+  { difficulty: "medium", city: "Istanbul", country: "Türkiye", image: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Istanbul_Montage_2016.png", hints: ["It spans two continents: Europe and Asia.", "Hagia Sophia is one of its most famous monuments."] },
+  { difficulty: "medium", city: "Rio de Janeiro", country: "Brazil", image: "https://upload.wikimedia.org/wikipedia/commons/9/98/Rio_de_Janeiro_City.jpg", hints: ["Christ the Redeemer overlooks this city.", "Copacabana and Ipanema beaches are here."] },
+  { difficulty: "medium", city: "Singapore", country: "Singapore", image: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Singapore_skyline_viewed_from_Gardens_by_the_Bay_East_2019-08-06.jpg", hints: ["Marina Bay Sands is one of its iconic buildings.", "It is both a city and a country."] },
+  { difficulty: "medium", city: "Amsterdam", country: "Netherlands", image: "https://upload.wikimedia.org/wikipedia/commons/2/20/Amsterdam_Canal_Ring.jpg", hints: ["This city is known for canals and narrow gabled houses.", "Bicycles are a major part of daily transport."] },
+  { difficulty: "medium", city: "Bangkok", country: "Thailand", image: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bangkok_skytrain_sunset.jpg", hints: ["Ornate temples like Wat Arun are major landmarks.", "It is Thailand’s capital city."] },
+  { difficulty: "medium", city: "Hong Kong", country: "China", image: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Hong_Kong_Night_Skyline.jpg", hints: ["Victoria Harbour separates Kowloon and Hong Kong Island.", "It is famous for dense skyline views and neon-lit streets."] },
+  { difficulty: "medium", city: "Cairo", country: "Egypt", image: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Kheops-Pyramid.jpg", hints: ["It sits near the Giza pyramids.", "The Nile River is central to this city’s identity."] },
+  { difficulty: "hard", city: "Venice", country: "Italy", image: "https://upload.wikimedia.org/wikipedia/commons/8/87/Venice_Canal.jpg", hints: ["This city is built on islands connected by bridges and canals.", "Gondolas are a famous way to travel here."] },
+  { difficulty: "hard", city: "Athens", country: "Greece", image: "https://upload.wikimedia.org/wikipedia/commons/d/da/The_Parthenon_in_Athens.jpg", hints: ["The Acropolis overlooks this city.", "It is considered the birthplace of democracy."] },
+  { difficulty: "hard", city: "Seoul", country: "South Korea", image: "https://upload.wikimedia.org/wikipedia/commons/2/2e/Seoul_montage_2019.png", hints: ["Gyeongbokgung Palace is a major historic site here.", "This is South Korea’s capital city."] },
+  { difficulty: "hard", city: "Vienna", country: "Austria", image: "https://upload.wikimedia.org/wikipedia/commons/f/f6/Wien_-_Karlskirche_abends.jpg", hints: ["This city is famous for classical composers like Mozart and Strauss.", "Schönbrunn Palace is one of its top attractions."] },
+  { difficulty: "hard", city: "Mexico City", country: "Mexico", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Mexico_City_Reforma_Skyline.jpg", hints: ["This city was built near the site of the Aztec capital Tenochtitlan.", "It is one of the largest cities in the Americas."] },
+  { difficulty: "hard", city: "Lisbon", country: "Portugal", image: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Lisbon_Baixa.jpg", hints: ["Historic yellow trams are a symbol of this hilly city.", "It sits along the Tagus River near the Atlantic."] },
+  { difficulty: "hard", city: "Munich", country: "Germany", image: "https://upload.wikimedia.org/wikipedia/commons/5/54/Munich_Panorama_from_Olympiaturm.jpg", hints: ["Oktoberfest is held in this city.", "It is the capital of Bavaria."] },
+  { difficulty: "hard", city: "Toronto", country: "Canada", image: "https://upload.wikimedia.org/wikipedia/commons/c/c6/Toronto_Skyline_and_CN_Tower.jpg", hints: ["The CN Tower is a signature landmark here.", "It is Canada’s largest city."] }
+];
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { cityQuestionSet };
+}
+
+if (typeof window !== "undefined") {
+  window.cityQuestionSet = cityQuestionSet;
+}
+body { font-family: Arial, sans-serif; margin: 0; background: #f3f5f9; color: #111; }
+.container { max-width: 720px; margin: 24px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+.subtitle { margin-top: -8px; color: #555; }
+.controls, .guess-box { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+#city-image { width: 100%; height: 340px; object-fit: cover; border-radius: 8px; background: #ddd; }
+button { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+input, select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
+#result { font-weight: 700; min-height: 24px; }
+#meta, #score { color: #444; }
