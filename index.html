@@ -103,7 +103,7 @@
 
     .board-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
     }
 
@@ -619,7 +619,7 @@
       <div class="banner-inner">
         <h1 class="title">City Spotlight Showdown</h1>
         <p class="subtitle">
-          Three categories. Eight photos each. Easy = 10 points, Medium = 20 points, Hard = 30 points.
+          Four categories. Ten photos each. Easy = 10 points, Medium = 20 points, Hard = 30 points, Impossible = 40 points.
           Use hints only if needed (one hint = 50% points, two hints = 25% points). Turns rotate after each guess.
         </p>
       </div>
@@ -679,167 +679,67 @@
         label: "Easy",
         points: 10,
         questions: [
-          {
-            city: "New York",
-            image: "https://images.unsplash.com/photo-1496588152823-86ff7695b7f4?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in the United States.",
-            hint2: "It is known as the Big Apple."
-          },
-          {
-            city: "Paris",
-            image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in France.",
-            hint2: "The Eiffel Tower is here."
-          },
-          {
-            city: "London",
-            image: "https://images.unsplash.com/photo-1471623432079-b009d30b6729?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in the UK.",
-            hint2: "Big Ben is a famous landmark here."
-          },
-          {
-            city: "Tokyo",
-            image: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in East Asia.",
-            hint2: "It is the capital of Japan."
-          },
-          {
-            city: "Rome",
-            image: "https://images.unsplash.com/photo-1529260830199-42c24126f198?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Italy.",
-            hint2: "The Colosseum is located here."
-          },
-          {
-            city: "Sydney",
-            image: "https://images.unsplash.com/photo-1523428096881-5bd79d043006?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Australia.",
-            hint2: "Its Opera House is world famous."
-          },
-          {
-            city: "Dubai",
-            image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in the United Arab Emirates.",
-            hint2: "Burj Khalifa is here."
-          },
-          {
-            city: "Toronto",
-            image: "https://images.unsplash.com/photo-1517090504586-fde19ea6066f?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Canada.",
-            hint2: "The CN Tower is here."
-          }
+          { city: "New York", image: "https://images.unsplash.com/photo-1496588152823-86ff7695b7f4?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the United States.", hint2: "It is known as the Big Apple." },
+          { city: "Paris", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in France.", hint2: "The Eiffel Tower is here." },
+          { city: "London", image: "https://images.unsplash.com/photo-1471623432079-b009d30b6729?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the UK.", hint2: "Big Ben is a famous landmark here." },
+          { city: "Tokyo", image: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in East Asia.", hint2: "It is the capital of Japan." },
+          { city: "Rome", image: "https://images.unsplash.com/photo-1529260830199-42c24126f198?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Italy.", hint2: "The Colosseum is located here." },
+          { city: "Sydney", image: "https://images.unsplash.com/photo-1523428096881-5bd79d043006?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Australia.", hint2: "Its Opera House is world famous." },
+          { city: "Dubai", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the United Arab Emirates.", hint2: "Burj Khalifa is here." },
+          { city: "Toronto", image: "https://images.unsplash.com/photo-1517090504586-fde19ea6066f?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Canada.", hint2: "The CN Tower is here." },
+          { city: "Barcelona", image: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Spain.", hint2: "La Sagrada Família is here." },
+          { city: "Singapore", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1800&auto=format&fit=crop", hint1: "This city is also a country.", hint2: "Marina Bay Sands is here." }
         ]
       },
-
       medium: {
         label: "Medium",
         points: 20,
         questions: [
-          {
-            city: "Prague",
-            image: "https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Central Europe.",
-            hint2: "It is the capital of the Czech Republic."
-          },
-          {
-            city: "Lisbon",
-            image: "https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city has many hills and yellow trams.",
-            hint2: "It is the capital of Portugal."
-          },
-          {
-            city: "Seoul",
-            image: "https://images.unsplash.com/photo-1538485399081-7c897d5f9f27?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in South Korea.",
-            hint2: "It sits along the Han River."
-          },
-          {
-            city: "Vienna",
-            image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is known for classical music history.",
-            hint2: "It is the capital of Austria."
-          },
-          {
-            city: "Budapest",
-            image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is split by the Danube.",
-            hint2: "It is the capital of Hungary."
-          },
-          {
-            city: "Edinburgh",
-            image: "https://images.unsplash.com/photo-1474898856510-884a2f50f0f8?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Scotland.",
-            hint2: "Its castle overlooks the city center."
-          },
-          {
-            city: "Auckland",
-            image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in New Zealand.",
-            hint2: "It is called the City of Sails."
-          },
-          {
-            city: "Munich",
-            image: "https://images.unsplash.com/photo-1534313314376-a72289b6181e?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in southern Germany.",
-            hint2: "Oktoberfest is hosted here."
-          }
+          { city: "Prague", image: "https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Central Europe.", hint2: "It is the capital of the Czech Republic." },
+          { city: "Lisbon", image: "https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1800&auto=format&fit=crop", hint1: "This city has many hills and yellow trams.", hint2: "It is the capital of Portugal." },
+          { city: "Seoul", image: "https://images.unsplash.com/photo-1538485399081-7c897d5f9f27?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in South Korea.", hint2: "It sits along the Han River." },
+          { city: "Vienna", image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1800&auto=format&fit=crop", hint1: "This city is known for classical music history.", hint2: "It is the capital of Austria." },
+          { city: "Budapest", image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop", hint1: "This city is split by the Danube.", hint2: "It is the capital of Hungary." },
+          { city: "Edinburgh", image: "https://images.unsplash.com/photo-1474898856510-884a2f50f0f8?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Scotland.", hint2: "Its castle overlooks the city center." },
+          { city: "Auckland", image: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in New Zealand.", hint2: "It is called the City of Sails." },
+          { city: "Munich", image: "https://images.unsplash.com/photo-1534313314376-a72289b6181e?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in southern Germany.", hint2: "Oktoberfest is hosted here." },
+          { city: "Copenhagen", image: "https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Denmark.", hint2: "The Little Mermaid statue is here." },
+          { city: "Dublin", image: "https://images.unsplash.com/photo-1518005068251-37900150dfca?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Ireland.", hint2: "The River Liffey runs through it." }
         ]
       },
-
       hard: {
         label: "Hard",
         points: 30,
         questions: [
-          {
-            city: "Kyoto",
-            image: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Japan and famous for temples.",
-            hint2: "It was once Japan's imperial capital."
-          },
-          {
-            city: "Salzburg",
-            image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Austria.",
-            hint2: "Mozart was born here."
-          },
-          {
-            city: "Granada",
-            image: "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in southern Spain.",
-            hint2: "The Alhambra palace is here."
-          },
-          {
-            city: "Quebec City",
-            image: "https://images.unsplash.com/photo-1519181245277-cffeb31da2e3?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Canada.",
-            hint2: "It is a French-speaking provincial capital."
-          },
-          {
-            city: "Innsbruck",
-            image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in the Alps.",
-            hint2: "It is in western Austria."
-          },
-          {
-            city: "Porto",
-            image: "https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Portugal.",
-            hint2: "Its name is connected to port wine."
-          },
-          {
-            city: "Bergen",
-            image: "https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This coastal city is in Norway.",
-            hint2: "It is known for colorful harbor houses."
-          },
-          {
-            city: "Cork",
-            image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1800&auto=format&fit=crop",
-            hint1: "This city is in Ireland.",
-            hint2: "It is the second-largest city in the Republic of Ireland."
-          }
+          { city: "Kyoto", image: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Japan and famous for temples.", hint2: "It was once Japan's imperial capital." },
+          { city: "Salzburg", image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Austria.", hint2: "Mozart was born here." },
+          { city: "Granada", image: "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in southern Spain.", hint2: "The Alhambra palace is here." },
+          { city: "Quebec City", image: "https://images.unsplash.com/photo-1519181245277-cffeb31da2e3?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Canada.", hint2: "It is a French-speaking provincial capital." },
+          { city: "Innsbruck", image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the Alps.", hint2: "It is in western Austria." },
+          { city: "Porto", image: "https://images.unsplash.com/photo-1513735492246-483525079686?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Portugal.", hint2: "Its name is connected to port wine." },
+          { city: "Bergen", image: "https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1800&auto=format&fit=crop", hint1: "This coastal city is in Norway.", hint2: "It is known for colorful harbor houses." },
+          { city: "Cork", image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Ireland.", hint2: "It is the second-largest city in the Republic of Ireland." },
+          { city: "Lucerne", image: "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Switzerland.", hint2: "It sits on Lake Lucerne with a famous wooden bridge." },
+          { city: "Split", image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on Croatia's Dalmatian Coast.", hint2: "Diocletian's Palace is here." }
+        ]
+      },
+      impossible: {
+        label: "Impossible",
+        points: 40,
+        questions: [
+          { city: "Bruges", image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Belgium.", hint2: "It is known for canals and medieval buildings." },
+          { city: "Reykjavik", image: "https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Iceland.", hint2: "It is the northernmost capital in Europe." },
+          { city: "Tallinn", image: "https://images.unsplash.com/photo-1521038199265-bc482db0f923?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the Baltics.", hint2: "It is the capital of Estonia." },
+          { city: "Valletta", image: "https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on an island nation in the Mediterranean.", hint2: "It is the capital of Malta." },
+          { city: "Dubrovnik", image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is famous for old city walls and Game of Thrones scenes." },
+          { city: "Ljubljana", image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Central Europe.", hint2: "It is the capital of Slovenia." },
+          { city: "Ghent", image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Belgium.", hint2: "Gravensteen Castle is here." },
+          { city: "Riga", image: "https://images.unsplash.com/photo-1500959283089-9c3b1d7a8f3f?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Latvia.", hint2: "It is the largest city in the Baltic states." },
+          { city: "Baku", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on the Caspian Sea.", hint2: "It is the capital of Azerbaijan." },
+          { city: "Zagreb", image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is Croatia's inland capital city." }
         ]
       }
-    };
+    }};
 
     // ------------------------------
     // State
@@ -855,7 +755,7 @@
       hasAnsweredCurrentQuestion: false
     };
 
-    const totalQuestions = 24;
+    const totalQuestions = 40;
 
     // ------------------------------
     // Element refs
