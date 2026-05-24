@@ -833,6 +833,7 @@
     const state = {
       players: [],
       expectedPlayers: null,
+      playerCountLocked: false,
       activePlayerIndex: 0,
       usedQuestions: 0,
       currentQuestion: null,
@@ -981,7 +982,11 @@
 
     function updateRegisteredPlayersText() {
       if (state.players.length === 0) {
-        registeredPlayers.textContent = "No players added yet.";
+        if (Number.isInteger(state.expectedPlayers)) {
+          registeredPlayers.textContent = `Target players: ${state.expectedPlayers}. No players added yet.`;
+        } else {
+          registeredPlayers.textContent = "No players added yet.";
+        }
         return;
       }
 
@@ -995,17 +1000,21 @@
       const count = Number(playerCountInput.value);
       const name = playerNameInput.value.trim();
 
-      if (!Number.isInteger(count) || count < 1) {
+      if (!state.playerCountLocked && (!Number.isInteger(count) || count < 1)) {
         showSetupError("Enter a valid number of players first.");
         return;
       }
 
-      if (count > 12) {
+      if (!state.playerCountLocked && count > 12) {
         showSetupError("For this version, please use 12 players or fewer.");
         return;
       }
 
-      state.expectedPlayers = count;
+      if (!state.playerCountLocked) {
+        state.expectedPlayers = count;
+        state.playerCountLocked = true;
+        playerCountInput.disabled = true;
+      }
 
       if (!name) {
         showSetupError("Type a player name before clicking Add Player.");
@@ -1379,15 +1388,13 @@
 
     playerCountInput.addEventListener("input", () => {
       clearSetupError();
-      doneBtn.disabled = true;
 
       const proposed = Number(playerCountInput.value);
-      if (Number.isInteger(proposed) && proposed > 0) {
+      if (!state.playerCountLocked && Number.isInteger(proposed) && proposed > 0) {
         state.expectedPlayers = proposed;
-        if (state.players.length === state.expectedPlayers && state.players.length > 0) {
-          doneBtn.disabled = false;
-        }
       }
+
+      doneBtn.disabled = !(state.players.length > 0 && state.players.length === state.expectedPlayers);
 
       updateRegisteredPlayersText();
     });
