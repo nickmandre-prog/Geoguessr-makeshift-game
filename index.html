@@ -472,6 +472,28 @@
       min-width: 140px;
     }
 
+    .multiple-choice-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .choice-btn {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      padding: 9px 10px;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .choice-btn:hover {
+      background: rgba(87, 167, 255, 0.22);
+    }
+
     .resolution-actions {
       display: flex;
       justify-content: flex-end;
@@ -812,16 +834,16 @@
         label: "Impossible",
         points: 40,
         questions: [
-          { city: "Bruges", image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Belgium.", hint2: "It is known for canals and medieval buildings." },
-          { city: "Reykjavik", image: "https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Iceland.", hint2: "It is the northernmost capital in Europe." },
-          { city: "Tallinn", image: "https://images.unsplash.com/photo-1521038199265-bc482db0f923?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the Baltics.", hint2: "It is the capital of Estonia." },
-          { city: "Valletta", image: "https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on an island nation in the Mediterranean.", hint2: "It is the capital of Malta." },
-          { city: "Dubrovnik", image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is famous for old city walls and Game of Thrones scenes." },
-          { city: "Ljubljana", image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Central Europe.", hint2: "It is the capital of Slovenia." },
-          { city: "Ghent", image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Belgium.", hint2: "Gravensteen Castle is here." },
-          { city: "Riga", image: "https://images.unsplash.com/photo-1500959283089-9c3b1d7a8f3f?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Latvia.", hint2: "It is the largest city in the Baltic states." },
-          { city: "Baku", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on the Caspian Sea.", hint2: "It is the capital of Azerbaijan." },
-          { city: "Zagreb", image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is Croatia's inland capital city." }
+          { city: "Bruges", image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Belgium.", hint2: "It is known for canals and medieval buildings.", choices: ["Bruges", "Ghent", "Antwerp", "Brussels"] },
+          { city: "Reykjavik", image: "https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Iceland.", hint2: "It is the northernmost capital in Europe.", choices: ["Reykjavik", "Oslo", "Helsinki", "Tallinn"] },
+          { city: "Tallinn", image: "https://images.unsplash.com/photo-1521038199265-bc482db0f923?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in the Baltics.", hint2: "It is the capital of Estonia.", choices: ["Tallinn", "Riga", "Vilnius", "Warsaw"] },
+          { city: "Valletta", image: "https://images.unsplash.com/photo-1526481280695-3c469a5be31d?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on an island nation in the Mediterranean.", hint2: "It is the capital of Malta.", choices: ["Valletta", "Palermo", "Catania", "Nicosia"] },
+          { city: "Dubrovnik", image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is famous for old city walls and Game of Thrones scenes.", choices: ["Dubrovnik", "Split", "Kotor", "Zadar"] },
+          { city: "Ljubljana", image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Central Europe.", hint2: "It is the capital of Slovenia.", choices: ["Ljubljana", "Zagreb", "Sarajevo", "Bratislava"] },
+          { city: "Ghent", image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Belgium.", hint2: "Gravensteen Castle is here.", choices: ["Ghent", "Bruges", "Leuven", "Brussels"] },
+          { city: "Riga", image: "https://images.unsplash.com/photo-1500959283089-9c3b1d7a8f3f?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Latvia.", hint2: "It is the largest city in the Baltic states.", choices: ["Riga", "Tallinn", "Vilnius", "Minsk"] },
+          { city: "Baku", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1800&auto=format&fit=crop", hint1: "This city is on the Caspian Sea.", hint2: "It is the capital of Azerbaijan.", choices: ["Baku", "Tbilisi", "Yerevan", "Ankara"] },
+          { city: "Zagreb", image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is Croatia's inland capital city.", choices: ["Zagreb", "Belgrade", "Ljubljana", "Budapest"] }
         ]
       }
     };
@@ -1186,6 +1208,7 @@
         answer: question.city,
         hint1: question.hint1,
         hint2: question.hint2,
+        choices: Array.isArray(question.choices) ? question.choices : null,
         points: levelData.points,
         image: question.image
       };
@@ -1213,6 +1236,7 @@
             <button id="submitAnswerBtn" class="btn btn-primary" type="button">Submit</button>
             <button id="closeQuestionBtn" class="btn btn-secondary" type="button" disabled>Back</button>
           </div>
+          ${Array.isArray(question.choices) ? `<div class="multiple-choice-grid" id="multipleChoiceGrid">${question.choices.map((choice) => `<button type="button" class="choice-btn" data-choice="${choice.replace(/"/g, "&quot;")}">${choice}</button>`).join("")}</div>` : ""}
 
           <div class="resolution-actions" id="resolutionActions"></div>
         </div>
@@ -1227,6 +1251,18 @@
       const submitAnswerBtn = document.getElementById("submitAnswerBtn");
       const closeQuestionBtn = document.getElementById("closeQuestionBtn");
       const answerInput = document.getElementById("answerInput");
+      const multipleChoiceGrid = document.getElementById("multipleChoiceGrid");
+
+      if (multipleChoiceGrid) {
+        multipleChoiceGrid.querySelectorAll(".choice-btn").forEach((button) => {
+          button.addEventListener("click", () => {
+            if (state.hasAnsweredCurrentQuestion) {
+              return;
+            }
+            answerInput.value = button.dataset.choice || "";
+          });
+        });
+      }
 
       hintOneBtn.addEventListener("click", () => {
         if (state.hasAnsweredCurrentQuestion) {
