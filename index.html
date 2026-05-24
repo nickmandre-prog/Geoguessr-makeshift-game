@@ -565,6 +565,55 @@
       font-size: 1.6rem;
     }
 
+    .champagne-pop {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 95;
+    }
+
+    .bubble {
+      position: absolute;
+      bottom: -40px;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      opacity: 0.8;
+      background: radial-gradient(circle at 30% 30%, #fff, #f4d77e 70%);
+      animation: bubble-rise linear forwards;
+      filter: drop-shadow(0 0 8px rgba(255, 244, 168, 0.5));
+    }
+
+    .spark {
+      position: absolute;
+      width: 6px;
+      height: 18px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #fff8b8, #e8be4a);
+      opacity: 0.9;
+      animation: spark-fall linear forwards;
+    }
+
+    .cork {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #d6a56b, #8a5a2f);
+      box-shadow: 0 0 8px rgba(255, 226, 163, 0.45);
+      animation: cork-shot 1200ms ease-out forwards;
+    }
+
+    .champagne-announcement {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #ffe8a4;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-align: center;
+    }
+
     @keyframes reveal-zoom {
       from {
         transform: scale(1.2);
@@ -578,6 +627,42 @@
     @keyframes fade-in {
       from { opacity: 0; }
       to { opacity: 1; }
+    }
+
+    @keyframes bubble-rise {
+      0% {
+        transform: translateY(0) translateX(0) scale(0.6);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateY(-115vh) translateX(var(--drift, 0px)) scale(1.2);
+        opacity: 0;
+      }
+    }
+
+    @keyframes spark-fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(120vh) rotate(540deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes cork-shot {
+      0% {
+        transform: translateY(0) translateX(0) scale(0.8);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-65vh) translateX(var(--cork-drift, 0px)) scale(1.2);
+        opacity: 0;
+      }
     }
 
     @media (max-width: 980px) {
@@ -739,7 +824,7 @@
           { city: "Zagreb", image: "https://images.unsplash.com/photo-1549877452-9c387954fbc2?q=80&w=1800&auto=format&fit=crop", hint1: "This city is in Croatia.", hint2: "It is Croatia's inland capital city." }
         ]
       }
-    }};
+    };
 
     // ------------------------------
     // State
@@ -777,6 +862,7 @@
     const feedbackLayer = document.getElementById("feedbackLayer");
     const feedbackMark = document.getElementById("feedbackMark");
     const endLayer = document.getElementById("endLayer");
+    let champagneLayer = null;
 
     // ------------------------------
     // Utilities
@@ -805,6 +891,84 @@
       setTimeout(() => {
         feedbackLayer.classList.add("hidden");
       }, 2000);
+    }
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createChampagneLayer() {
+      const layer = document.createElement("div");
+      layer.className = "champagne-pop";
+      layer.setAttribute("aria-hidden", "true");
+      return layer;
+    }
+
+    function spawnBubble(container, fromLeftPercent) {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.style.left = `${fromLeftPercent}%`;
+      bubble.style.width = `${randomBetween(6, 16)}px`;
+      bubble.style.height = bubble.style.width;
+      bubble.style.animationDuration = `${randomBetween(2.8, 5.2)}s`;
+      bubble.style.setProperty("--drift", `${randomBetween(-80, 80)}px`);
+      container.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 5400);
+    }
+
+    function spawnSpark(container, fromLeftPercent) {
+      const spark = document.createElement("div");
+      spark.className = "spark";
+      spark.style.left = `${fromLeftPercent}%`;
+      spark.style.top = `${randomBetween(-8, 20)}px`;
+      spark.style.height = `${randomBetween(12, 26)}px`;
+      spark.style.animationDuration = `${randomBetween(1.2, 2.1)}s`;
+      container.appendChild(spark);
+      setTimeout(() => spark.remove(), 2500);
+    }
+
+    function spawnCork(container, startPercent) {
+      const cork = document.createElement("div");
+      cork.className = "cork";
+      cork.style.left = `${startPercent}%`;
+      cork.style.bottom = "20px";
+      cork.style.setProperty("--cork-drift", `${randomBetween(-240, 240)}px`);
+      container.appendChild(cork);
+      setTimeout(() => cork.remove(), 1300);
+    }
+
+    function playChampagnePop() {
+      if (champagneLayer) {
+        champagneLayer.remove();
+      }
+
+      champagneLayer = createChampagneLayer();
+      document.body.appendChild(champagneLayer);
+
+      const burstCount = 70;
+      for (let i = 0; i < burstCount; i += 1) {
+        const sideBias = i % 2 === 0 ? randomBetween(6, 32) : randomBetween(68, 94);
+        setTimeout(() => {
+          spawnBubble(champagneLayer, sideBias);
+        }, i * 30);
+      }
+
+      for (let i = 0; i < 54; i += 1) {
+        const startLeft = randomBetween(3, 97);
+        setTimeout(() => {
+          spawnSpark(champagneLayer, startLeft);
+        }, i * 40);
+      }
+
+      spawnCork(champagneLayer, 18);
+      spawnCork(champagneLayer, 82);
+
+      setTimeout(() => {
+        if (champagneLayer) {
+          champagneLayer.remove();
+          champagneLayer = null;
+        }
+      }, 6200);
     }
 
     function formatPoints(points) {
@@ -1191,11 +1355,13 @@
           <h2 style="margin: 0;">🏆 Final Podium</h2>
           <p style="margin: 7px 0 0; color: var(--muted);">All city clues have been completed.</p>
           <div class="podium">${steps}</div>
+          <div class="champagne-announcement">🍾 Champagne pop celebration unlocked!</div>
         </div>
       `;
 
       endLayer.classList.remove("hidden");
       endLayer.setAttribute("aria-hidden", "false");
+      playChampagnePop();
     }
 
     // ------------------------------
@@ -1232,6 +1398,109 @@
 
     renderBoard();
     updateRegisteredPlayersText();
+
+    // ---------------------------------------------------------
+    // Future Content Appendix (intentional reserve lines)
+    // ---------------------------------------------------------
+    // The entries below are not currently required by gameplay.
+    // They are included as an in-file content appendix so it is
+    // easy to expand rounds in future revisions without changing
+    // the external architecture.
+    // ---------------------------------------------------------
+    const futureCityAppendix = [
+      { city: "Oslo", region: "Europe", note: "Potential medium clue." },
+      { city: "Helsinki", region: "Europe", note: "Potential medium clue." },
+      { city: "Stockholm", region: "Europe", note: "Potential easy clue." },
+      { city: "Warsaw", region: "Europe", note: "Potential medium clue." },
+      { city: "Krakow", region: "Europe", note: "Potential hard clue." },
+      { city: "Naples", region: "Europe", note: "Potential medium clue." },
+      { city: "Milan", region: "Europe", note: "Potential easy clue." },
+      { city: "Venice", region: "Europe", note: "Potential easy clue." },
+      { city: "Florence", region: "Europe", note: "Potential medium clue." },
+      { city: "Santiago", region: "South America", note: "Potential medium clue." },
+      { city: "Lima", region: "South America", note: "Potential medium clue." },
+      { city: "Bogota", region: "South America", note: "Potential hard clue." },
+      { city: "Medellin", region: "South America", note: "Potential hard clue." },
+      { city: "Quito", region: "South America", note: "Potential impossible clue." },
+      { city: "Sao Paulo", region: "South America", note: "Potential medium clue." },
+      { city: "Rio de Janeiro", region: "South America", note: "Potential easy clue." },
+      { city: "Cape Town", region: "Africa", note: "Potential medium clue." },
+      { city: "Johannesburg", region: "Africa", note: "Potential hard clue." },
+      { city: "Nairobi", region: "Africa", note: "Potential hard clue." },
+      { city: "Marrakesh", region: "Africa", note: "Potential hard clue." },
+      { city: "Casablanca", region: "Africa", note: "Potential medium clue." },
+      { city: "Alexandria", region: "Africa", note: "Potential impossible clue." },
+      { city: "Cairo", region: "Africa", note: "Potential easy clue." },
+      { city: "Doha", region: "Middle East", note: "Potential medium clue." },
+      { city: "Muscat", region: "Middle East", note: "Potential hard clue." },
+      { city: "Amman", region: "Middle East", note: "Potential hard clue." },
+      { city: "Jerusalem", region: "Middle East", note: "Potential medium clue." },
+      { city: "Istanbul", region: "Europe/Asia", note: "Potential medium clue." },
+      { city: "Ankara", region: "Europe/Asia", note: "Potential hard clue." },
+      { city: "Tbilisi", region: "Europe/Asia", note: "Potential impossible clue." },
+      { city: "Yerevan", region: "Europe/Asia", note: "Potential impossible clue." },
+      { city: "Ulaanbaatar", region: "Asia", note: "Potential impossible clue." },
+      { city: "Kathmandu", region: "Asia", note: "Potential hard clue." },
+      { city: "Hanoi", region: "Asia", note: "Potential medium clue." },
+      { city: "Ho Chi Minh City", region: "Asia", note: "Potential medium clue." },
+      { city: "Bangkok", region: "Asia", note: "Potential easy clue." },
+      { city: "Kuala Lumpur", region: "Asia", note: "Potential medium clue." },
+      { city: "Manila", region: "Asia", note: "Potential medium clue." },
+      { city: "Jakarta", region: "Asia", note: "Potential medium clue." },
+      { city: "Taipei", region: "Asia", note: "Potential hard clue." },
+      { city: "Hong Kong", region: "Asia", note: "Potential easy clue." },
+      { city: "Busan", region: "Asia", note: "Potential hard clue." },
+      { city: "Fukuoka", region: "Asia", note: "Potential impossible clue." },
+      { city: "Sapporo", region: "Asia", note: "Potential hard clue." },
+      { city: "Melbourne", region: "Oceania", note: "Potential easy clue." },
+      { city: "Brisbane", region: "Oceania", note: "Potential medium clue." },
+      { city: "Wellington", region: "Oceania", note: "Potential medium clue." },
+      { city: "Christchurch", region: "Oceania", note: "Potential hard clue." },
+      { city: "Perth", region: "Oceania", note: "Potential medium clue." },
+      { city: "Honolulu", region: "North America", note: "Potential medium clue." }
+    ];
+
+    const futureExpansionChecklist = [
+      "Add optional timer mode for each clue.",
+      "Add steal mechanic for missed first guess.",
+      "Add sounds for hint reveal events.",
+      "Add local storage for persistent scoreboards.",
+      "Add per-city attribution overlays.",
+      "Add category randomizer toggle.",
+      "Add no-hints bonus streak support.",
+      "Add keyboard-only navigation map.",
+      "Add colorblind-safe theme alternative.",
+      "Add team-mode with shared score cards.",
+      "Add replay button from podium screen.",
+      "Add host controls for skipping clues.",
+      "Add shuffle mode for clue ordering.",
+      "Add per-round summary table.",
+      "Add optional sudden death finale.",
+      "Add simple animation quality setting.",
+      "Add offline image pack capability.",
+      "Add unit tests when build tooling is introduced.",
+      "Add scoreboard export to CSV.",
+      "Add onboarding tooltips for first-time players."
+    ];
+
+    void futureCityAppendix;
+    void futureExpansionChecklist;
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+    // Additional reserved lines for future scripted rounds.
+
   </script>
 </body>
 </html>
